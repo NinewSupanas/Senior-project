@@ -12,7 +12,7 @@ const connection = mysql.createConnection({
     port:'3308'
 });
 
-const table ='Data';
+const table ='data';
 
 var app = express();
 app.use(cors());
@@ -176,6 +176,32 @@ app.put('/update', async (req, res) => {
             message: 'Data updated successfully',
             affctedRows: result.affctedRows
         });
+    });
+});
+
+
+app.post('/login', (req, res) => {
+    const { email } = req.body;
+
+    // ตรวจสอบว่า email มีอยู่ในฐานข้อมูลหรือไม่
+    connection.query('SELECT role FROM role WHERE email = ?', [email], (err, results) => {
+        if (err) {
+            return res.status(500).send(err);
+        }
+
+        if (results.length > 0) {
+            // ถ้ามี email นี้อยู่ในฐานข้อมูลให้ส่ง role กลับไป
+            res.json({ role: results[0].role });
+        } else {
+            // ถ้าไม่มี email นี้ ให้สร้าง role ใหม่ด้วย default role
+            const defaultRole = 'user';
+            connection.query('INSERT INTO role (email, role) VALUES (?, ?)', [email, defaultRole], (err) => {
+                if (err) {
+                    return res.status(500).send(err);
+                }
+                res.json({ role: defaultRole });
+            });
+        }
     });
 });
 
